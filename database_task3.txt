@@ -1,0 +1,345 @@
+/* school*/
+create schema school;
+
+CREATE TABLE `school`.`sound_good_school`(
+  `ID` INT NOT NULL AUTO_INCREMENT,
+  `organizationNumber` VARCHAR(50) NOT NULL UNIQUE,
+  `phoneNumber` VARCHAR(50) NULL,
+  `street` VARCHAR(50) NULL,
+  `zip` VARCHAR(50) NULL,
+  `city` VARCHAR(50) NULL,
+  PRIMARY KEY (`ID`))ENGINE =InnoDB;
+
+  
+CREATE TABLE `school`.`instrument_stock` (
+  `ID` INT NOT NULL AUTO_INCREMENT,
+  `instrumentID` VARCHAR(20) NOT NULL UNIQUE,
+  `instrumentType` VARCHAR(20) NULL,
+  `brand` VARCHAR(20) NULL,
+  `leasePrice` VARCHAR(10) NULL,
+  `status` VARCHAR(20) NULL,
+  `organization_id` INT NOT NULL,
+  PRIMARY KEY (`ID`),
+  constraint fk_organization_instrumentStock
+  foreign key(organization_id)
+     references school.sound_good_school(ID)
+     on delete cascade
+  ) ENGINE=InnoDB;
+  
+  
+  
+  Create table `school`.`employee`(
+  `ID` Int not null Auto_increment,
+  `employeeID` varchar(20) not null unique,
+  `personumber`varchar(12) not null unique,
+  `firstname` varchar(50) null,
+  `lastname`varchar(50) null,
+   `email` varchar(50) null,
+   `phoneNumber` varchar(20) null,
+   `city`varchar(50) null,
+   `street`varchar(50) null,
+   `zip`varchar(50) null,
+   `salary_per_hour`varchar(50) null,
+   `organization_id`int not null,
+   primary key(`ID`),
+   constraint fk_organization_employee
+   foreign key(organization_id)
+      references school.sound_good_school(ID)
+      on delete cascade
+  ) ENGINE =InnoDB;
+  
+  /* customer */
+  create schema customer;
+  create table `customer`.`student`(
+  `ID`int not null Auto_increment,
+  `personnumber` varchar(12) not null unique,
+  `firstname`varchar(50) null,
+  `lastname`varchar(50) null,
+  `email`varchar(50) null,
+  `phoneNumber`varchar(30) null,
+  `street`varchar(50) null,
+  `zip`varchar(50) null,
+  `city`varchar(50) null,
+  primary key(`ID`)
+  ) engine = innodb;
+  
+  create table customer.instrumentLevel(
+  instrument varchar(20) not null,
+  studentID int not null,
+  `level` varchar(20),
+  PRIMARY KEY (instrument, studentID),
+  CONSTRAINT student_instrumentSkill
+  foreign key (studentID)
+    references customer.student(ID)
+    on delete cascade
+  )engine = innodb;
+
+create table `customer`.`parent`(
+`ID`int not null Auto_increment primary key,
+`firstname`varchar(50) null,
+`lastname`varchar(50) null ,
+`phoneNumber`varchar(50)null,
+`email`varchar(50) null
+) engine=innodb;
+
+create table customer.parents_student(
+studentID int not null,
+parentsID int not null,
+primary key(studentID,parentsID),
+constraint parents_student
+foreign key(studentID)
+  references customer.student(ID)
+  on delete cascade,
+foreign key (parentsID)
+  references customer.parent(ID)
+  on delete cascade
+)engine=innodb;
+
+create table customer.siblings(
+ID int not null auto_increment primary key,
+siblingsPersonnumber varchar(12) not null
+) engine=innodb;
+
+create table customer.studentSiblings(
+studentID int not null,
+siblingsID int not null,
+primary key(studentID,siblingsID),
+constraint studentSiblings
+foreign key(studentID)
+  references customer.student(ID)
+  on delete cascade,
+foreign key(siblingsID)
+  references customer.siblings(ID)
+  on delete cascade
+) engine=innodb;
+
+/* payment*/
+create schema payment;
+create table payment.discount(
+student_id int not null,
+siblings_id int not null,
+discount_amount varchar(20),
+primary key(student_id, siblings_id),
+constraint student_discount
+foreign key(student_id)
+   references customer.student(ID)
+   on delete cascade,
+foreign key(siblings_id)
+   references customer.siblings(ID)
+      on delete cascade
+)engine=InnoDB;
+
+create table payment.payment(
+ID int not null auto_increment,
+totalAmount varchar(50),
+student_id int not null,
+`date` timestamp,
+primary key(ID),
+constraint student_payment
+foreign key(student_id)
+   references customer.student(ID)
+) engine=innodb;
+
+create table payment.payment_has_discount(
+payment_id int not null,
+student_id int not null,
+siblings_id int not null,
+primary key(payment_id,student_id,siblings_id),
+constraint student_payment_id
+foreign key(payment_id)
+  references payment.payment(ID)
+  on delete cascade,
+foreign key(student_id,siblings_id)
+  references payment.discount(student_id, siblings_id)
+  on delete cascade
+)engine=innodb;
+
+
+
+/*lesson*/
+create schema lecture;
+create table lecture.price(
+`level` varchar(20) not null,
+startTime Timestamp not null,
+endTime timestamp not null,
+lessonType varchar(50) not null,
+price varchar(20) null,
+primary key(`level`,startTime, endTime, lessonType)
+) engine = innodb;
+
+create table lecture.lesson(
+ID int not null auto_increment primary key,
+lessonID varchar (20) not null unique,
+instrument varchar(20) null,
+`level`varchar(20) null,
+startTime Timestamp not null,
+endTime timestamp not null,
+lessonType varchar(50) not null,
+constraint lesson_price
+foreign key(`level`, startTime, endTime, lessonType)
+  references lecture.price(`level`,startTime, endTime, lessonType)
+  on delete cascade
+  on update cascade
+)engine=innodb;
+
+create table lecture.individual_lesson(
+lesson_id int not null primary key,
+`status` varchar(20) not null,
+constraint lesson_individualLesson
+foreign key (lesson_id)
+  references lecture.lesson(ID)
+  on delete cascade
+)engine=innodb;
+
+create table lecture.scheduled_lesson(
+lesson_id int not null primary key,
+minimun_nr_of_students varchar(10) not null,
+maximun_nr_of_students varchar(10) not null,
+`status` varchar(10),
+constraint lesson_scheduledLesson
+foreign key(lesson_id)
+  references lecture.lesson(ID)
+  on delete cascade
+)engine=innodb;
+
+create table lecture.group_lesson(
+lesson_id int not null primary key,
+foreign key(lesson_id)
+  references lecture.scheduled_lesson(lesson_id)
+  on delete cascade
+) engine =innodb;
+
+create table lecture.ensemble_lesson(
+lesson_id int not null primary key,
+foreign key(lesson_id)
+  references lecture.scheduled_lesson(lesson_id)
+  on delete cascade
+) engine=innodb;
+
+create table lecture.local_instructor(
+instructor_id int not null,
+lesson_id int not null,
+room varchar(20),
+primary key (instructor_id, lesson_id),
+constraint local_instructor_lesson
+foreign key (instructor_id)
+  references school.employee(ID)
+  on delete cascade,
+foreign key(lesson_id)
+  references lecture.lesson(ID)
+  on delete cascade
+) engine=innodb;
+
+create table lecture.audition_price(
+ID int not null auto_increment primary key,
+audition_id varchar(20) UNIQUE,
+start_time timestamp not null,
+end_time timestamp not null,
+price varchar(20)
+) engine=innodb;
+
+create table lecture.audition_highlevel(
+audition_id int not null,
+instructor_id int not null,
+instrument varchar(20),
+room varchar(10),
+primary key(audition_id),
+constraint lecture_audition
+foreign key(audition_id)
+  references lecture.audition_price(ID),
+foreign key(instructor_id)
+  references school.employee(ID)
+) engine = innodb;
+
+/* booking */
+create schema booking;
+create table booking.booking(
+ID int not null auto_increment primary key,
+student_id int not null,
+foreign key(student_id)
+  references customer.student(ID)
+) engine=innodb;
+
+create table booking.booking_has_lesson(
+booking_id int not null,
+lesson_id int not null,
+accepted varchar(10),
+primary key(booking_id,lesson_id),
+constraint booking_has_lesson
+foreign key(booking_id)
+  references booking.booking(ID)
+  on delete cascade,
+foreign key(lesson_id)
+  references lecture.lesson(ID)
+  on delete cascade
+) engine=innodb;
+
+create table booking.booking_audition(
+booking_id int not null,
+audition_id int not null,
+primary key(booking_id,audition_id),
+constraint booking_audition
+foreign key(audition_id)
+  references lecture.audition_highlevel(audition_id)
+  on delete cascade,
+foreign key(booking_id)
+  references booking.booking(ID)
+  on delete cascade
+) engine = innodb;
+
+/* customer*/
+create table customer.advanced_level(
+student_id int not null,
+audition_id int not null,
+result varchar(10),
+primary key(student_id, audition_id),
+constraint uppdate_advancedlevel
+foreign key(audition_id)
+  references lecture.audition_highlevel(audition_id)
+  on delete cascade,
+foreign key(student_id)
+  references customer.student(ID)
+  on delete cascade
+) engine=innodb;
+
+/* payment*/
+create table payment.payment_has_booking(
+payment_id int not null,
+booking_id int not null,
+primary key(payment_id, booking_id),
+constraint payment_has_booking
+foreign key (payment_id)
+  references payment.payment(ID)
+  on delete cascade,
+foreign key (booking_id)
+  references booking.booking(ID)
+  on delete cascade
+) engine=innodb;
+
+
+create table payment.payment_has_instrumentRental(
+payment_id int not null,
+student_id int not null,
+instrument_id int not null,
+primary key (payment_id,student_id,instrument_id),
+constraint payment_has_Rental
+foreign key(student_id, instrument_id)
+  references school.instrumentRental(student_id, instrument_id),
+foreign key(payment_id)
+  references payment.payment(ID)
+) engine =innodb;
+
+
+/*school*/
+create table school.instrumentRental(
+instrument_id int not null,
+student_id int not null,
+rentDate timestamp not null,
+returnDate timestamp null,
+primary key(instrument_id, student_id, rentDate),
+constraint student_instrumentRental
+foreign key(student_id)
+  references customer.student(ID),
+foreign key(instrument_id)
+  references school.instrument_stock(ID)
+)engine=innodb;
