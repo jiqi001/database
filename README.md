@@ -1,1 +1,1 @@
-# databas till dcbc-school
+# databas till jdbc-school
